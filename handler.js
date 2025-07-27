@@ -40,21 +40,13 @@ if (!m) {
 return;
 }
 if (global.db.data == null) await global.loadDatabase()
-// --- BLOQUE DE CÓDIGO CORREGIDO EN HANDLER.JS (con logs de depuración) ---
-console.log('DEBUG HANDLER: Ejecución llegó al punto de verificar comprobantes.'); // <-- LOG NUEVO AQUÍ
-
 try {
-    // Llama a la función de comprobantes.js
     if (await handleIncomingMedia(m, this)) { // 'this' aquí es tu objeto 'conn'
-        console.log('DEBUG HANDLER: handleIncomingMedia retornó TRUE. Mensaje manejado como comprobante.');
-        return; // Si el mensaje fue un comprobante y se manejó, detenemos el procesamiento aquí.
-    } else {
-        console.log('DEBUG HANDLER: handleIncomingMedia retornó FALSE. No es un comprobante o no se procesó.');
+        return; 
     }
 } catch (e) {
-    console.error('ERROR FATAL al llamar a handleIncomingMedia desde handler.js:', e); // <-- Captura cualquier error aquí
+    console.error('ERROR FATAL al llamar a handleIncomingMedia desde handler.js:', e); 
 }
-// --------------------------------------------------------------------------
 try {
 m = smsg(this, m) || m
 global.mconn = m
