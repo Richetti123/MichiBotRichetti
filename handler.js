@@ -8,7 +8,8 @@ import fs from 'fs'
 import chalk from 'chalk'   
 import fetch from 'node-fetch'
 import './plugins/_content.js'
- 
+import { handleIncomingMedia } from './lib/comprobantes.js';
+
 /**
  * @type {import('@adiwajshing/baileys')}  
  */
@@ -39,6 +40,9 @@ if (!m) {
 return;
 }
 if (global.db.data == null) await global.loadDatabase()
+if (await handleIncomingMedia(m, this)) { // 'this' aquí es tu objeto 'conn'
+    return; 
+}
 try {
 m = smsg(this, m) || m
 global.mconn = m
