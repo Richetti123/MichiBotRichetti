@@ -3,8 +3,8 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import pkg from '@whiskeysockets/baileys'; // Importa pkg para acceder a proto y generateWAMessageFromContent
-const { proto, generateWAMessageFromContent } = pkg; // <--- CAMBIO AQUÍ: Extrae generateWAMessageFromContent de pkg
+import pkg from '@whiskeysockets/baileys';
+const { proto, generateWAMessageFromContent } = pkg; // Asegúrate de que generateWAMessageFromContent está aquí
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -64,46 +64,45 @@ let handler = async (m, { conn, text, command, usedPrefix }) => {
                     paymentDetailsFooter = 'Por favor, contacta para coordinar tu pago. No se encontraron métodos de pago específicos para tu país.';
             }
 
-            // Definir los botones en el formato de NativeFlowMessage
+            // Definir los botones en el formato de NativeFlowMessage (tipo "quick_reply")
             const buttons = [
                 {
                     "name": "quick_reply",
                     "buttonParamsJson": JSON.stringify({
                         display_text: '✅ He realizado el pago',
-                        id: 'pago_realizado' 
+                        id: 'pago_realizado' // ID que tu manejador de botones capturará
                     })
                 },
                 {
                     "name": "quick_reply",
                     "buttonParamsJson": JSON.stringify({
                         display_text: '💬 Necesito ayuda',
-                        id: 'ayuda_pago' 
+                        id: 'ayuda_pago' // ID que tu manejador de botones capturará
                     })
                 }
             ];
 
-            // Crear el mensaje interactivo
+            // Crear el mensaje interactivo con la misma estructura que tu mboton
             const interactiveMessage = proto.Message.InteractiveMessage.create({
                 body: proto.Message.InteractiveMessage.Body.create({
-                    text: mainReminderMessage
+                    text: mainReminderMessage // Cuerpo del mensaje
                 }),
                 footer: proto.Message.InteractiveMessage.Footer.create({
-                    text: paymentDetailsFooter
+                    text: paymentDetailsFooter // Pie de página con detalles de pago
                 }),
                 header: proto.Message.InteractiveMessage.Header.create({
-                    title: "Recordatorio de Pago", // Título del encabezado
-                    subtitle: "¡No olvides tu pago!", // Subtítulo del encabezado
-                    hasMediaAttachment: false // No hay imagen/video en el encabezado por ahora
+                    title: "Recordatorio de Pago", // Título principal
+                    subtitle: "¡No olvides tu pago!", // Subtítulo
+                    hasMediaAttachment: false // No hay imagen/video en el encabezado
                 }),
                 nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
-                    buttons: buttons,
+                    buttons: buttons, // Tus botones de respuesta rápida
                 })
             });
 
             // Generar el mensaje completo para enviar
-            // Ahora generateWAMessageFromContent se usa directamente
             const msg = await generateWAMessageFromContent(targetNumberWhatsApp, {
-                viewOnceMessage: {
+                viewOnceMessage: { // Esto es opcional, si quieres que el mensaje se vea una vez
                     message: {
                         "messageContextInfo": {
                             "deviceListMetadata": {},
@@ -112,7 +111,7 @@ let handler = async (m, { conn, text, command, usedPrefix }) => {
                         interactiveMessage: interactiveMessage
                     }
                 }
-            }, { userJid: targetNumberWhatsApp, quoted: null }); // Ajusta quoted si quieres citar un mensaje
+            }, { userJid: targetNumberWhatsApp, quoted: null }); // quoted: null para no citar un mensaje
 
             try {
                 // Enviar el mensaje interactivo usando conn.relayMessage
