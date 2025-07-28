@@ -1,18 +1,18 @@
 // plugins/respuestaspago.js
 
-console.log("[DEBUG - Carga] respuestaspago.js se esta intentando cargar."); // <-- ¡AÑADE ESTA LÍNEA AQUÍ!
+console.log("[DEBUG - Carga] respuestaspago.js se esta intentando cargar.");
 
 let handler = async (m, { conn, text }) => {
     // [DEBUG] Mensaje recibido
     console.log(`[DEBUG - ManejarRespuesta] Mensaje recibido de: ${m.sender}, Texto: "${m.text}"`);
 
-    // Asegúrate de que el mensaje es de un usuario y no un comando, y no es un grupo
-    // IMPORTANTE: Si estás probando en un GRUPO, elimina o comenta '&& !m.isGroup'
+    // IMPORTANTE: Si estás probando en un GRUPO, cambia handler.private a false y comenta la línea de abajo.
+    // Si estás probando en un chat privado (DM), déjalo como está.
     if (!m.isGroup && m.text && !m.text.startsWith('.')) {
         // [DEBUG] Cumple las condiciones básicas
         console.log(`[DEBUG - ManejarRespuesta] Cumple condiciones basicas (no grupo, es texto, no comando).`);
         const userJid = m.sender; // El ID del usuario que envió el mensaje
-        
+
         // Verifica si estamos esperando una respuesta de pago de este usuario
         // [DEBUG] Verificando estado en DB
         console.log(`[DEBUG - ManejarRespuesta] Intentando acceder a global.db.data.users[${userJid}]:`, global.db?.data?.users?.[userJid]?.awaitingPaymentResponse);
@@ -21,7 +21,7 @@ let handler = async (m, { conn, text }) => {
             // [DEBUG] Estado 'awaitingPaymentResponse' es TRUE
             console.log(`[DEBUG - ManejarRespuesta] Awaiting response TRUE para ${userJid}.`);
             const response = text.trim(); // La respuesta del usuario
-            
+
             // Recuperar el nombre y número de contacto del cliente de la base de datos
             const clientName = global.db.data.users[userJid].paymentClientName || 'cliente desconocido';
             const clientContactNumber = global.db.data.users[userJid].paymentClientNumber || userJid.split('@')[0];
@@ -44,7 +44,7 @@ let handler = async (m, { conn, text }) => {
                         // [DEBUG] Procesando Opción 2
                         console.log(`[DEBUG - ManejarRespuesta] Procesando Opción 2: "${response}".`);
                         await conn.reply(m.chat, `En un momento se comunicará mi creador contigo.`, m);
-                        
+
                         const adminNotificationText = `👋 Hola creador, *${clientName}* (${clientContactNumber}) tiene problemas con su pago. Por favor comunícate con él/ella.`;
                         // [DEBUG] Enviando notificación a admin
                         console.log(`[DEBUG - ManejarRespuesta] Enviando notificación a admin: ${adminNotificationText}`);
@@ -73,6 +73,6 @@ let handler = async (m, { conn, text }) => {
 };
 
 handler.noLimit = true;
-handler.private = true; 
+handler.private = true; // Si estás probando en un grupo, cambia 'true' a 'false' o elimina esta línea.
 
 export default handler;
