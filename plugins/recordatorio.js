@@ -41,50 +41,59 @@ let handler = async (m, { conn, text, command, usedPrefix }) => {
 
             const targetNumberWhatsApp = numero.replace(/\+/g, '') + '@c.us';
 
-            let reminderMessage = `¡Hola ${nombre}! 👋 Este es un recordatorio de tu pago pendiente de ${monto}.`;
-            let paymentDetails = '';
+            // Separar el mensaje principal de los detalles de pago
+            let mainReminderMessage = `¡Hola ${nombre}! 👋 Este es un recordatorio de tu pago pendiente de ${monto}.`;
+            let paymentDetailsFooter = ''; // Aquí irán los detalles para el footer
 
             switch (bandera) {
                 case '🇲🇽': // Mexico
-                    paymentDetails = `\n\nPara pagar en México, usa:
-                    CLABE: 706969168872764411
-                    Nombre: Gaston Juarez
-                    Banco: Arcus Fi`;
+                    paymentDetailsFooter = `Para pagar en México, usa:\nCLABE: 706969168872764411\nNombre: Gaston Juarez\nBanco: Arcus Fi`;
                     break;
                 case '🇵🇪': // Peru
-                    paymentDetails = `\n\nPara pagar en Perú, usa:
-                    Nombre: Marcelo Gonzales R.
-                    Yape: 967699188
-                    Plin: 955095498`;
+                    paymentDetailsFooter = `Para pagar en Perú, usa:\nNombre: Marcelo Gonzales R.\nYape: 967699188\nPlin: 955095498`;
                     break;
                 case '🇨🇱': // Chile
-                    paymentDetails = `\n\nPara pagar en Chile, usa:
-                    Nombre: BARINIA VALESKA ZENTENO MERINO
-                    RUT: 17053067-5
-                    BANCO ELEGIR: TEMPO
-                    Tipo de cuenta: Cuenta Vista
-                    Numero de cuenta: 111117053067
-                    Correo: estraxer2002@gmail.com`;
+                    paymentDetailsFooter = `Para pagar en Chile, usa:\nNombre: BARINIA VALESKA ZENTENO MERINO\nRUT: 17053067-5\nBANCO ELEGIR: TEMPO\nTipo de cuenta: Cuenta Vista\nNumero de cuenta: 111117053067\nCorreo: estraxer2002@gmail.com`;
                     break;
                 case '🇦🇷': // Argentina
-                    paymentDetails = `\n\nPara pagar en Argentina, usa:
-                    Nombre: Gaston Juarez
-                    CBU: 4530000800011127480736`;
+                    paymentDetailsFooter = `Para pagar en Argentina, usa:\nNombre: Gaston Juarez\nCBU: 4530000800011127480736`;
                     break;
                 default:
-                    paymentDetails = '\n\nPor favor, contacta para coordinar tu pago. No se encontraron métodos de pago específicos para tu país.';
+                    paymentDetailsFooter = 'Por favor, contacta para coordinar tu pago. No se encontraron métodos de pago específicos para tu país.';
             }
 
-            reminderMessage += paymentDetails;
+            // Definir los botones, usando los mismos IDs para que manejar_botones_pago.js los capte
+            const buttons = [
+                {
+                    quickReplyButton: {
+                        displayText: '✅ He realizado el pago',
+                        id: 'pago_realizado' 
+                    }
+                },
+                {
+                    quickReplyButton: {
+                        displayText: '💬 Necesito ayuda',
+                        id: 'ayuda_pago' 
+                    }
+                }
+            ];
+
+            // Objeto del mensaje con botones
+            const messageContent = {
+                text: mainReminderMessage,
+                footer: paymentDetailsFooter,
+                templateButtons: buttons,
+                // optional: headerType: 1 // Si quieres solo texto en el encabezado
+            };
 
             try {
-                await conn.sendMessage(targetNumberWhatsApp, { text: reminderMessage });
+                // Enviar el mensaje con botones al cliente
+                await conn.sendMessage(targetNumberWhatsApp, messageContent);
                 m.reply(`✅ Recordatorio enviado exitosamente a *${nombre}* (${numero}).`);
 
-                // <-- NUEVA FUNCIONALIDAD: Notificar al administrador -->
+                // Notificar al administrador del envío manual
                 const confirmationText = `✅ Se ha enviado un recordatorio de pago manual a *${nombre}* (${numero}).`;
                 await conn.sendMessage(ADMIN_NUMBER_CONFIRMATION, { text: confirmationText });
-                // <--------------------------------------------------->
 
             } catch (sendError) {
                 console.error(`Error sending message to ${nombre} (${numero}):`, sendError);
