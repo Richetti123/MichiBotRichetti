@@ -2,7 +2,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } = from 'url';
+import { fileURLToPath } from 'url';
 import pkg from '@whiskeysockets/baileys'; // Importa pkg para acceder a proto y generateWAMessageFromContent
 const { proto, generateWAMessageFromContent } = pkg; // <--- CAMBIO AQUÍ: Extrae generateWAMessageFromContent de pkg
 
