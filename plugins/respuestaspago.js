@@ -1,53 +1,77 @@
 // plugins/manejar_respuesta_pago.js
 
 let handler = async (m, { conn, text }) => {
-    // Asegúrate de que el mensaje es de un usuario y no un comando
+    // [DEBUG] Mensaje recibido
+    console.log(`[DEBUG - ManejarRespuesta] Mensaje recibido de: ${m.sender}, Texto: "${m.text}"`);
+
+    // Asegúrate de que el mensaje es de un usuario y no un comando, y no es un grupo
+    // IMPORTANTE: Si estás probando en un GRUPO, elimina o comenta '&& !m.isGroup'
     if (!m.isGroup && m.text && !m.text.startsWith('.')) {
-        const userJid = m.sender; // El ID del usuario que envió el mensaje (ej: 5217771234567@c.us)
+        // [DEBUG] Cumple las condiciones básicas
+        console.log(`[DEBUG - ManejarRespuesta] Cumple condiciones basicas (no grupo, es texto, no comando).`);
+        const userJid = m.sender; // El ID del usuario que envió el mensaje
         
         // Verifica si estamos esperando una respuesta de pago de este usuario
+        // [DEBUG] Verificando estado en DB
+        console.log(`[DEBUG - ManejarRespuesta] Intentando acceder a global.db.data.users[${userJid}]:`, global.db?.data?.users?.[userJid]?.awaitingPaymentResponse);
+
         if (global.db && global.db.data && global.db.data.users && global.db.data.users[userJid] && global.db.data.users[userJid].awaitingPaymentResponse) {
+            // [DEBUG] Estado 'awaitingPaymentResponse' es TRUE
+            console.log(`[DEBUG - ManejarRespuesta] Awaiting response TRUE para ${userJid}.`);
             const response = text.trim(); // La respuesta del usuario
             
             // Recuperar el nombre y número de contacto del cliente de la base de datos
             const clientName = global.db.data.users[userJid].paymentClientName || 'cliente desconocido';
-            const clientContactNumber = global.db.data.users[userJid].paymentClientNumber || userJid.split('@')[0]; // Debería ser el número con + prefijo
+            const clientContactNumber = global.db.data.users[userJid].paymentClientNumber || userJid.split('@')[0];
+
+            console.log(`[DEBUG - ManejarRespuesta] Respuesta recibida: "${response}", Nombre Cliente: "${clientName}", Numero Cliente: "${clientContactNumber}"`);
 
             // Reiniciar el estado para este usuario inmediatamente para evitar bucles
             global.db.data.users[userJid].awaitingPaymentResponse = false;
             delete global.db.data.users[userJid].paymentClientName; // Limpiar datos opcionales
             delete global.db.data.users[userJid].paymentClientNumber; // Limpiar datos opcionales
 
-
-            switch (response) {
-                case '1':
-                    // Respuesta para la Opción 1
-                    await conn.reply(m.chat, `Si ya ha realizado su pago por favor enviar foto o documento de su pago con el siguiente texto "Aqui esta mi comprobante de pago"`, m);
-                    // Opcional: Podrías notificar al administrador que el cliente va a enviar un comprobante
-                    // await conn.sendMessage('5217771303481@c.us', { text: `🔔 *Comprobante Pendiente (Manual)*\nEl cliente *${clientName}* (${clientContactNumber}) ha respondido 'He realizado el pago' y está a la espera de enviar el comprobante.` });
-                    break;
-                case '2':
-                    // Respuesta para la Opción 2
-                    await conn.reply(m.chat, `En un momento se comunicará mi creador contigo.`, m);
-                    
-                    // Notificar al administrador con los detalles del cliente
-                    const adminNotificationText = `👋 Hola creador, *${clientName}* (${clientContactNumber}) tiene problemas con su pago. Por favor comunícate con él/ella.`;
-                    await conn.sendMessage('5217771303481@c.us', { text: adminNotificationText });
-                    break;
-                default:
-                    // Si la respuesta no es 1 o 2, pero estábamos esperando una respuesta de pago
-                    await conn.reply(m.chat, `Por favor, ${clientName}, responde con '1' si ya realizaste el pago o '2' si necesitas ayuda.`, m);
-                    // Mantener esperando si la respuesta no es válida para que pueda volver a intentarlo
-                    global.db.data.users[userJid].awaitingPaymentResponse = true; 
-                    global.db.data.users[userJid].paymentClientName = clientName; // Re-establecer por si se borraron
-                    global.db.data.users[userJid].paymentClientNumber = clientContactNumber; // Re-establecer por si se borraron
-                    break;
+            try { // Añadimos un try/catch dentro por si falla el envío de mensajes
+                switch (response) {
+                    case '1':
+                        // [DEBUG] Procesando Opción 1
+                        console.log(`[DEBUG - ManejarRespuesta] Procesando Opción 1: "${response}".`);
+                        await conn.reply(m.chat, `Si ya ha realizado su pago por favor enviar foto o documento de su pago con el siguiente texto "Aqui esta mi comprobante de pago"`, m);
+                        break;
+                    case '2':
+                        // [DEBUG] Procesando Opción 2
+                        console.log(`[DEBUG - ManejarRespuesta] Procesando Opción 2: "${response}".`);
+                        await conn.reply(m.chat, `En un momento se comunicará mi creador contigo.`, m);
+                        
+                        const adminNotificationText = `👋 Hola creador, *${clientName}* (${clientContactNumber}) tiene problemas con su pago. Por favor comunícate con él/ella.`;
+                        // [DEBUG] Enviando notificación a admin
+                        console.log(`[DEBUG - ManejarRespuesta] Enviando notificación a admin: ${adminNotificationText}`);
+                        await conn.sendMessage('5217771303481@c.us', { text: adminNotificationText });
+                        break;
+                    default:
+                        // [DEBUG] Opción no reconocida
+                        console.log(`[DEBUG - ManejarRespuesta] Opción no reconocida: "${response}". Manteniendo awaitingPaymentResponse en true.`);
+                        await conn.reply(m.chat, `Por favor, ${clientName}, responde con '1' si ya realizaste el pago o '2' si necesitas ayuda.`, m);
+                        global.db.data.users[userJid].awaitingPaymentResponse = true; 
+                        global.db.data.users[userJid].paymentClientName = clientName;
+                        global.db.data.users[userJid].paymentClientNumber = clientContactNumber;
+                        break;
+                }
+            } catch (replyError) {
+                console.error(`[DEBUG - ManejarRespuesta] Error al responder o notificar:`, replyError);
             }
+        } else {
+            // [DEBUG] Estado 'awaitingPaymentResponse' es FALSE o no hay entrada en DB
+            console.log(`[DEBUG - ManejarRespuesta] Awaiting response FALSE o no existe global.db.data.users para ${userJid}.`);
         }
+    } else {
+        // [DEBUG] Mensaje no cumple condiciones básicas
+        console.log(`[DEBUG - ManejarRespuesta] Mensaje no cumple condiciones basicas (es grupo o es comando). m.isGroup: ${m.isGroup}, m.text: "${m.text}", startsWith('.'): ${m.text?.startsWith('.')}`);
     }
 };
 
-handler.noLimit = true; // No consumir límite de uso
-handler.private = true; // Solo funciona en chats privados (si lo deseas, quítalo para grupos)
+handler.noLimit = true;
+// Si estás probando en un grupo, cambia 'true' a 'false' o elimina esta línea
+handler.private = true; 
 
 export default handler;
