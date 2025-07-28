@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import pkg from '@whiskeysockets/baileys';
-const { proto, generateWAMessageFromContent } = pkg; // Asegúrate de que generateWAMessageFromContent está aquí
+const { proto, generateWAMessageFromContent } = pkg;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -64,25 +64,37 @@ let handler = async (m, { conn, text, command, usedPrefix }) => {
                     paymentDetailsFooter = 'Por favor, contacta para coordinar tu pago. No se encontraron métodos de pago específicos para tu país.';
             }
 
-            // Definir los botones en el formato de NativeFlowMessage (tipo "quick_reply")
-            const buttons = [
+            // Definir las secciones y filas para el botón de lista
+            const sections = [
                 {
-                    "name": "quick_reply",
-                    "buttonParamsJson": JSON.stringify({
-                        display_text: '✅ He realizado el pago',
-                        id: 'pago_realizado' // ID que tu manejador de botones capturará
-                    })
-                },
-                {
-                    "name": "quick_reply",
-                    "buttonParamsJson": JSON.stringify({
-                        display_text: '💬 Necesito ayuda',
-                        id: 'ayuda_pago' // ID que tu manejador de botones capturará
-                    })
+                    title: "Opciones de Pago", // Título de la sección
+                    rows: [
+                        {
+                            header: "✅",
+                            title: "He realizado el pago",
+                            description: "Haz clic si ya pagaste.",
+                            id: "pago_realizado"
+                        },
+                        {
+                            header: "💬",
+                            title: "Necesito ayuda",
+                            description: "Presiona para contactar soporte.",
+                            id: "ayuda_pago"
+                        }
+                    ]
                 }
             ];
 
-            // Crear el mensaje interactivo con la misma estructura que tu mboton
+            // Crear el botón de lista
+            const listButton = {
+                name: "single_select",
+                buttonParamsJson: JSON.stringify({
+                    title: "Selecciona una opción", // Título del botón que se muestra en el mensaje
+                    sections: sections
+                })
+            };
+
+            // Crear el mensaje interactivo con el botón de lista
             const interactiveMessage = proto.Message.InteractiveMessage.create({
                 body: proto.Message.InteractiveMessage.Body.create({
                     text: mainReminderMessage // Cuerpo del mensaje
@@ -96,7 +108,7 @@ let handler = async (m, { conn, text, command, usedPrefix }) => {
                     hasMediaAttachment: false // No hay imagen/video en el encabezado
                 }),
                 nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
-                    buttons: buttons, // Tus botones de respuesta rápida
+                    buttons: [listButton], // Aquí va el botón de lista
                 })
             });
 
