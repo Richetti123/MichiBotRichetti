@@ -2,9 +2,9 @@
 
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import pkg from '@whiskeysockets/baileys'; // Importa pkg para acceder a proto
-const { proto } = pkg; // Extrae proto de pkg
+import { fileURLToPath } = from 'url';
+import pkg from '@whiskeysockets/baileys'; // Importa pkg para acceder a proto y generateWAMessageFromContent
+const { proto, generateWAMessageFromContent } = pkg; // <--- CAMBIO AQUÍ: Extrae generateWAMessageFromContent de pkg
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -101,7 +101,8 @@ let handler = async (m, { conn, text, command, usedPrefix }) => {
             });
 
             // Generar el mensaje completo para enviar
-            const msg = await conn.generateWAMessageFromContent(targetNumberWhatsApp, {
+            // Ahora generateWAMessageFromContent se usa directamente
+            const msg = await generateWAMessageFromContent(targetNumberWhatsApp, {
                 viewOnceMessage: {
                     message: {
                         "messageContextInfo": {
@@ -114,7 +115,7 @@ let handler = async (m, { conn, text, command, usedPrefix }) => {
             }, { userJid: targetNumberWhatsApp, quoted: null }); // Ajusta quoted si quieres citar un mensaje
 
             try {
-                // Enviar el mensaje interactivo
+                // Enviar el mensaje interactivo usando conn.relayMessage
                 await conn.relayMessage(targetNumberWhatsApp, msg.message, { messageId: msg.key.id });
                 m.reply(`✅ Recordatorio enviado exitosamente a *${nombre}* (${numero}).`);
 
@@ -123,7 +124,7 @@ let handler = async (m, { conn, text, command, usedPrefix }) => {
                 await conn.sendMessage(ADMIN_NUMBER_CONFIRMATION, { text: confirmationText });
 
             } catch (sendError) {
-                console.error(`Error sending message to ${nombre} (${numero}):`, sendError);
+                console.error(`Error al enviar el mensaje a ${nombre} (${numero}):`, sendError);
                 m.reply(`❌ Falló el envío del recordatorio a *${nombre}* (${numero}). Posiblemente el número no es válido en WhatsApp o hay un problema de conexión: ${sendError.message || sendError}`);
             }
         } else {
@@ -131,7 +132,7 @@ let handler = async (m, { conn, text, command, usedPrefix }) => {
         }
 
     } catch (e) {
-        console.error('Error processing .recordatorio command:', e);
+        console.error('Error al procesar el comando .recordatorio:', e);
         m.reply(`❌ Ocurrió un error interno al intentar enviar el recordatorio. Por favor, reporta este error.`);
     }
 };
