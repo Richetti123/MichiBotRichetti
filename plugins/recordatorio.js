@@ -41,7 +41,7 @@ let handler = async (m, { conn, text, command, usedPrefix }) => {
             const { monto, bandera, nombre } = foundClientInfo;
             const numero = foundPhoneNumberKey;
 
-            const targetNumberWhatsApp = numero.replace(/\+/g, '') + '@c.us';
+            const targetNumberWhatsApp = numero.replace(/\+/g, '') + '@c.us'; // <-- Aquí se define targetNumberWhatsApp
 
             // Separar el mensaje principal de los detalles de pago
             let mainReminderMessage = `¡Hola ${nombre}! 👋 Este es un recordatorio de tu pago pendiente de ${monto}.`;
@@ -113,13 +113,13 @@ let handler = async (m, { conn, text, command, usedPrefix }) => {
             });
 
             // Generar el mensaje completo para enviar
-            const msg = await generateWAMessageFromContent(formattedNumber, { // O targetNumberWhatsApp en el manual
+            const msg = await generateWAMessageFromContent(targetNumberWhatsApp, { // <-- Aquí ya no hay viewOnceMessage
                 "messageContextInfo": {
                     "deviceListMetadata": {},
                     "deviceListMetadataVersion": 2
                 },
                 interactiveMessage: interactiveMessage
-            }, { userJid: formattedNumber, quoted: null }); // O targetNumberWhatsApp en el manual
+            }, { userJid: targetNumberWhatsApp, quoted: null }); // <-- CORRECCIÓN AQUÍ: userJid debe ser targetNumberWhatsApp
 
             try {
                 // Enviar el mensaje interactivo usando conn.relayMessage
