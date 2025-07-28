@@ -1,4 +1,6 @@
-// plugins/manejar_respuesta_pago.js
+// plugins/respuestaspago.js
+
+console.log("[DEBUG - Carga] respuestaspago.js se esta intentando cargar."); // <-- ¡AÑADE ESTA LÍNEA AQUÍ!
 
 let handler = async (m, { conn, text }) => {
     // [DEBUG] Mensaje recibido
@@ -71,5 +73,6 @@ let handler = async (m, { conn, text }) => {
 };
 
 handler.noLimit = true;
+handler.private = true; 
 
 export default handler;
