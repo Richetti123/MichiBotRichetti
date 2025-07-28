@@ -8,8 +8,9 @@ import fs from 'fs'
 import chalk from 'chalk'   
 import fetch from 'node-fetch'
 import './plugins/_content.js'
-import { handleIncomingMedia } from './lib/comprobantes.js'
-import { manejarRespuestaPago } from './lib/respuestapagos.js';
+import { manejarRespuestaPago } from './lib/respuestapagos.js'
+import { handleIncomingMedia } from './lib/comprobantes.js';
+
 
 /**
  * @type {import('@adiwajshing/baileys')}  
