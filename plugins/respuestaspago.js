@@ -74,6 +74,6 @@ let handler = async (m, { conn, text }) => {
 };
 
 handler.noLimit = true;
-handler.private = true; // Mantenerlo en true si pruebas en chat privado.
+handler.private = false; // Mantenerlo en true si pruebas en chat privado.
 
 export default handler;
