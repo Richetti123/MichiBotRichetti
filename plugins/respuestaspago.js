@@ -71,7 +71,5 @@ let handler = async (m, { conn, text }) => {
 };
 
 handler.noLimit = true;
-// Si estás probando en un grupo, cambia 'true' a 'false' o elimina esta línea
-handler.private = true; 
 
 export default handler;
