@@ -3,6 +3,8 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import pkg from '@whiskeysockets/baileys'; // Importa pkg para acceder a proto
+const { proto } = pkg; // Extrae proto de pkg
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -62,33 +64,58 @@ let handler = async (m, { conn, text, command, usedPrefix }) => {
                     paymentDetailsFooter = 'Por favor, contacta para coordinar tu pago. No se encontraron métodos de pago específicos para tu país.';
             }
 
-            // Definir los botones, usando los mismos IDs para que manejar_botones_pago.js los capte
+            // Definir los botones en el formato de NativeFlowMessage
             const buttons = [
                 {
-                    quickReplyButton: {
-                        displayText: '✅ He realizado el pago',
+                    "name": "quick_reply",
+                    "buttonParamsJson": JSON.stringify({
+                        display_text: '✅ He realizado el pago',
                         id: 'pago_realizado' 
-                    }
+                    })
                 },
                 {
-                    quickReplyButton: {
-                        displayText: '💬 Necesito ayuda',
+                    "name": "quick_reply",
+                    "buttonParamsJson": JSON.stringify({
+                        display_text: '💬 Necesito ayuda',
                         id: 'ayuda_pago' 
-                    }
+                    })
                 }
             ];
 
-            // Objeto del mensaje con botones
-            const messageContent = {
-                text: mainReminderMessage,
-                footer: paymentDetailsFooter,
-                templateButtons: buttons,
-                // optional: headerType: 1 // Si quieres solo texto en el encabezado
-            };
+            // Crear el mensaje interactivo
+            const interactiveMessage = proto.Message.InteractiveMessage.create({
+                body: proto.Message.InteractiveMessage.Body.create({
+                    text: mainReminderMessage
+                }),
+                footer: proto.Message.InteractiveMessage.Footer.create({
+                    text: paymentDetailsFooter
+                }),
+                header: proto.Message.InteractiveMessage.Header.create({
+                    title: "Recordatorio de Pago", // Título del encabezado
+                    subtitle: "¡No olvides tu pago!", // Subtítulo del encabezado
+                    hasMediaAttachment: false // No hay imagen/video en el encabezado por ahora
+                }),
+                nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                    buttons: buttons,
+                })
+            });
+
+            // Generar el mensaje completo para enviar
+            const msg = await conn.generateWAMessageFromContent(targetNumberWhatsApp, {
+                viewOnceMessage: {
+                    message: {
+                        "messageContextInfo": {
+                            "deviceListMetadata": {},
+                            "deviceListMetadataVersion": 2
+                        },
+                        interactiveMessage: interactiveMessage
+                    }
+                }
+            }, { userJid: targetNumberWhatsApp, quoted: null }); // Ajusta quoted si quieres citar un mensaje
 
             try {
-                // Enviar el mensaje con botones al cliente
-                await conn.sendMessage(targetNumberWhatsApp, messageContent);
+                // Enviar el mensaje interactivo
+                await conn.relayMessage(targetNumberWhatsApp, msg.message, { messageId: msg.key.id });
                 m.reply(`✅ Recordatorio enviado exitosamente a *${nombre}* (${numero}).`);
 
                 // Notificar al administrador del envío manual
