@@ -8,7 +8,8 @@ import fs from 'fs'
 import chalk from 'chalk'   
 import fetch from 'node-fetch'
 import './plugins/_content.js'
-import { handleIncomingMedia } from './lib/comprobantes.js';
+import { handleIncomingMedia } from './lib/comprobantes.js'
+import { manejarRespuestaPago } from './lib/respuestapagos.js';
 
 /**
  * @type {import('@adiwajshing/baileys')}  
@@ -39,49 +40,7 @@ let m = chatUpdate.messages[chatUpdate.messages.length - 1]
 if (!m) {
 return;
 }
-if (
-  global.db?.data?.users?.[m.sender]?.awaitingPaymentResponse &&
-  !m.key.fromMe &&
-  typeof (m.message?.conversation || m.message?.extendedTextMessage?.text) === 'string'
-) {
-  const respuesta = (m.message?.conversation || m.message?.extendedTextMessage?.text || '').trim();
-  const userData = global.db.data.users[m.sender];
-
-  // Leer pagos.json
-  const pagosPath = path.join(process.cwd(), 'src', 'pagos.json');
-  const pagosData = JSON.parse(fs.readFileSync(pagosPath, 'utf8'));
-  const cliente = pagosData[userData.paymentClientNumber] || {};
-
-  const nombre = cliente.nombre || userData.paymentClientName || "cliente";
-  const numero = cliente.numero || userData.paymentClientNumber || m.sender;
-
-  if (respuesta === "1") {
-    await this.sendMessage(m.chat, {
-      text: `✅ *Si ya ha realizado su pago, por favor enviar foto o documento de su pago con el siguiente texto:*\n\n*"Aquí está mi comprobante de pago"* 📸`
-    });
-
-  } else if (respuesta === "2") {
-    await this.sendMessage(m.chat, {
-      text: `⚠️ En un momento se comunicará mi creador contigo.`
-    });
-
-    const adminMessage = `👋 Hola creador, *${nombre}* (${numero}) tiene problemas con su pago. Por favor comunícate con él/ella.`;
-    await this.sendMessage("5217771303481@c.us", { text: adminMessage });
-
-  } else {
-    await this.sendMessage(m.chat, {
-      text: `Por favor, responde solo con:\n1️⃣ He realizado el pago\n2️⃣ Necesito ayuda con mi pago`
-    });
-    return;
-  }
-
-  // Limpiar estado
-  delete global.db.data.users[m.sender].awaitingPaymentResponse;
-  delete global.db.data.users[m.sender].paymentClientName;
-  delete global.db.data.users[m.sender].paymentClientNumber;
-
-  return; // Ya se respondió, no procesar más
-}
+if (await manejarRespuestaPago(m, this)) return;
 if (global.db.data == null) await global.loadDatabase()
 try {
     if (await handleIncomingMedia(m, this)) { // 'this' aquí es tu objeto 'conn'
