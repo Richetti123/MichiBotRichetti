@@ -113,17 +113,13 @@ let handler = async (m, { conn, text, command, usedPrefix }) => {
             });
 
             // Generar el mensaje completo para enviar
-            const msg = await generateWAMessageFromContent(targetNumberWhatsApp, {
-                viewOnceMessage: { // Esto es opcional, si quieres que el mensaje se vea una vez
-                    message: {
-                        "messageContextInfo": {
-                            "deviceListMetadata": {},
-                            "deviceListMetadataVersion": 2
-                        },
-                        interactiveMessage: interactiveMessage
-                    }
-                }
-            }, { userJid: targetNumberWhatsApp, quoted: null }); // quoted: null para no citar un mensaje
+            const msg = await generateWAMessageFromContent(formattedNumber, { // O targetNumberWhatsApp en el manual
+                "messageContextInfo": {
+                    "deviceListMetadata": {},
+                    "deviceListMetadataVersion": 2
+                },
+                interactiveMessage: interactiveMessage
+            }, { userJid: formattedNumber, quoted: null }); // O targetNumberWhatsApp en el manual
 
             try {
                 // Enviar el mensaje interactivo usando conn.relayMessage
